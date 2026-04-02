@@ -19,24 +19,27 @@
 #define USART1_CR1  (*(volatile uint32_t *)(USART1_BASE + 0x00))
 #define USART1_BRR  (*(volatile uint32_t *)(USART1_BASE + 0x0C))
 #define USART1_ISR  (*(volatile uint32_t *)(USART1_BASE + 0x1C))
+#define USART1_RDR  (*(volatile uint32_t *)(USART1_BASE + 0x24))
 #define USART1_TDR  (*(volatile uint32_t *)(USART1_BASE + 0x28))
 
+#define USART_ISR_RXNE (1 << 5)
 #define USART_ISR_TXE  (1 << 7)
 #define USART_CR1_UE   (1 << 0)
+#define USART_CR1_RE   (1 << 2)
 #define USART_CR1_TE   (1 << 3)
 
 void uart_init(void) {
     RCC_AHBENR  |= RCC_AHBENR_GPIOCEN;
     RCC_APB2ENR |= RCC_APB2ENR_USART1EN;
 
-    // PC4 en Alternate Function, AF7 = USART1_TX
-    GPIOC_MODER &= ~(0x3 << (4 * 2));
-    GPIOC_MODER |=  (0x2 << (4 * 2));
-    GPIOC_AFRL  &= ~(0xF << (4 * 4));
-    GPIOC_AFRL  |=  (0x7 << (4 * 4));
+    // PC4 = USART1_TX, PC5 = USART1_RX  (AF7)
+    GPIOC_MODER &= ~(0x3 << (4 * 2)) & ~(0x3 << (5 * 2));
+    GPIOC_MODER |=  (0x2 << (4 * 2)) |  (0x2 << (5 * 2));
+    GPIOC_AFRL  &= ~(0xF << (4 * 4)) & ~(0xF << (5 * 4));
+    GPIOC_AFRL  |=  (0x7 << (4 * 4)) |  (0x7 << (5 * 4));
 
     USART1_BRR = 625;  // 115200 @ 72 MHz
-    USART1_CR1 = USART_CR1_TE | USART_CR1_UE;
+    USART1_CR1 = USART_CR1_RE | USART_CR1_TE | USART_CR1_UE;
 }
 
 void uart_putc(char c) {
@@ -47,6 +50,14 @@ void uart_putc(char c) {
 
 void uart_puts(const char *s) {
     while (*s) uart_putc(*s++);
+}
+
+int uart_rx_ready(void) {
+    return (USART1_ISR & USART_ISR_RXNE) != 0;
+}
+
+char uart_getc(void) {
+    return (char)(USART1_RDR & 0xFF);
 }
 
 void uart_print_int(int32_t n) {

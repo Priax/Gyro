@@ -6,6 +6,8 @@
 void uart_init(void);
 void uart_putc(char c);
 void uart_puts(const char *s);
-void uart_print_int(int32_t n);  // affiche un entier signé
+void uart_print_int(int32_t n);
+int  uart_rx_ready(void);
+char uart_getc(void);
 
 #endif

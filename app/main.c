@@ -85,6 +85,15 @@ void uart_task(void) {
     uart_puts("\r\n");
 }
 
+void uart_rx_task(void) {
+    if (!uart_rx_ready()) return;
+    char c = uart_getc();
+    if (c == 'r' || c == 'R') {
+        angle_mdeg = 0;
+        uart_puts("angle reset\r\n");
+    }
+}
+
 int main(void) {
     leds_init();
     spi_init();
@@ -101,9 +110,10 @@ int main(void) {
     systick_init();
     scheduler_init();
 
-    scheduler_add_task(gyro_task,   1);
-    scheduler_add_task(led_task,   10);
-    scheduler_add_task(uart_task, 500);
+    scheduler_add_task(gyro_task,    1);
+    scheduler_add_task(led_task,    10);
+    scheduler_add_task(uart_task,  500);
+    scheduler_add_task(uart_rx_task, 10);
 
     while (1) {
         scheduler_run();
