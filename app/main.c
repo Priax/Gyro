@@ -2,6 +2,7 @@
 #include "spi.h"
 #include "gyro.h"
 #include "uart.h"
+#include "oled.h"
 #include "scheduler.h"
 
 void systick_init(void);
@@ -85,6 +86,17 @@ void uart_task(void) {
     uart_puts("\r\n");
 }
 
+void oled_task(void) {
+    oled_clear();
+    oled_draw_string(0, 0, "=== Gyro F3 ===");
+    oled_draw_string(0, 2, "Angle:");
+    oled_draw_int   (42, 2, angle_mdeg / 1000);
+    oled_draw_string(90, 2, "deg");
+    oled_draw_string(0, 4, "gz:");
+    oled_draw_int   (24, 4, gz);
+    oled_flush();
+}
+
 void uart_rx_task(void) {
     if (!uart_rx_ready()) return;
     char c = uart_getc();
@@ -98,6 +110,7 @@ int main(void) {
     leds_init();
     spi_init();
     uart_init();
+    oled_init();
 
     uart_puts("\r\nGyro Scheduler\r\n");
 
@@ -114,6 +127,7 @@ int main(void) {
     scheduler_add_task(led_task,    10);
     scheduler_add_task(uart_task,  500);
     scheduler_add_task(uart_rx_task, 10);
+    scheduler_add_task(oled_task,  200);
 
     while (1) {
         scheduler_run();
