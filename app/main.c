@@ -77,8 +77,10 @@ void led_task(void) {
 }
 
 void uart_task(void) {
+    uart_puts("gz (negatif = sens anti horaire): ");
     uart_print_int(gz);
     uart_puts("\t");
+    uart_puts("angle: ");
     uart_print_int(angle_mdeg / 1000);
     uart_puts("\r\n");
 }
@@ -101,7 +103,7 @@ int main(void) {
 
     scheduler_add_task(gyro_task,   1);
     scheduler_add_task(led_task,   10);
-    scheduler_add_task(uart_task, 100);
+    scheduler_add_task(uart_task, 500);
 
     while (1) {
         scheduler_run();

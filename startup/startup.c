@@ -18,12 +18,30 @@ void SysTick_Handler(void) {
 }
 
 void systick_init(void) {
-    SYST_RVR = 8000 - 1;  // 8 MHz / 8000 = 1 kHz → 1 ms par tick
+    SYST_RVR = 72000 - 1;  // 72 MHz / 72000 = 1 kHz → 1 ms par tick
     SYST_CVR = 0;
     SYST_CSR = 0x7;        // CLKSOURCE=CPU, TICKINT=1, ENABLE=1
 }
 
+#define RCC_CR    (*(volatile uint32_t *)0x40021000)
+#define RCC_CFGR  (*(volatile uint32_t *)0x40021004)
+#define FLASH_ACR (*(volatile uint32_t *)0x40022000)
+
+static void clock_72mhz(void) {
+    FLASH_ACR = 0x12;               // 2 wait states + prefetch (requis à 72 MHz)
+    RCC_CR |= (1u << 16);           // HSEON
+    while (!(RCC_CR & (1u << 17))); // attendre HSERDY
+    RCC_CFGR = (1u << 16)           // PLLSRC = HSE
+             | (0x7u << 18);        // PLLMUL = ×9 → 8 MHz × 9 = 72 MHz
+    RCC_CR |= (1u << 24);           // PLLON
+    while (!(RCC_CR & (1u << 25))); // attendre PLLRDY
+    RCC_CFGR |= 0x2u;               // SW = PLL
+    while (((RCC_CFGR >> 2) & 0x3u) != 0x2u); // attendre SWS = PLL
+}
+
 void Reset_Handler(void) {
+    clock_72mhz();
+
     // 1. Copier .data de Flash vers RAM
     uint32_t *src = &_sidata;
     uint32_t *dst = &_sdata;

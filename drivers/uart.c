@@ -35,7 +35,7 @@ void uart_init(void) {
     GPIOC_AFRL  &= ~(0xF << (4 * 4));
     GPIOC_AFRL  |=  (0x7 << (4 * 4));
 
-    USART1_BRR = 69;  // 115200 @ 8 MHz
+    USART1_BRR = 625;  // 115200 @ 72 MHz
     USART1_CR1 = USART_CR1_TE | USART_CR1_UE;
 }
 
